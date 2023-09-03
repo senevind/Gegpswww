@@ -1,0 +1,19 @@
+image: node:latest
+
+# Template from "plain HTML pages"
+# Full project: https://gitlab.com/pages/plain-html
+pages:
+    stage: deploy
+    script:
+        - mkdir .public
+        - cp -r * .public
+        - mv .public public
+    artifacts:
+        paths:
+            - public
+    only:
+        - master
+
+cache:
+    paths:
+        - node_modules/

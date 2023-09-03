@@ -1,0 +1,3 @@
+2019-01-31 08:42:53-: Error-: Data too long for column 'custom_1' at row 1
+INSERT INTO `payments_log`(`merchant_id`, `order_id`, `payment_id`, `payhere_amount`, `payhere_currency`, `status_code`, `md5sig`, `custom_1`, `custom_2`, `result`) 
+		VALUES ('212483','352848026361986','320025026920','990.00','LKR','2','3959E977235A08E74DE744E95DF2D1A4','Nishan Thusitha Kumara','nishanthusitha80@gmail.com','Succesfully Extended for one year! ')

@@ -1,0 +1,21 @@
+{
+  "name": "GEGPS.com",
+  "short_name": "GEGPS.COM",
+  "start_url": "./",
+  "scope": "./",
+  "icons": [
+    {
+      "src": "images/contract.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "images/contract.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "theme_color": "#6974FD",
+  "background_color": "#F4F6F6",
+  "display": "standalone"
+}

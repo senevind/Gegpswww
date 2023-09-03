@@ -1,0 +1,5 @@
+2019-06-15 07:20:24-: merchant_id:212322 order_id:13140102487 payment_id:320025018378 payhere_amount:1.00 payhere_currency:USD status_code:2 md5sig:D14BE4952A5322FCB119BBC2C2BAECA4 custom_1:sasindugps custom_2:63-2201
+2019-06-15 07:37:16-: merchant_id:212483 order_id:351510090504138 payment_id:320025038875 payhere_amount:50.00 payhere_currency:LKR status_code:2 md5sig:2AE883AE2BD0DA16A6B564E344A96384 custom_1:Nuwan Senevirathna custom_2:senevind@gmail.com
+2019-06-15 07:57:02-: merchant_id:212483 order_id:351510090504138 payment_id:320025038877 payhere_amount:50.00 payhere_currency:LKR status_code:2 md5sig:2AE883AE2BD0DA16A6B564E344A96384 custom_1:Nuwan Senevirathna custom_2:senevind@gmail.com
+2019-06-15 07:57:04-: INSERT INTO `payments_log`(`merchant_id`, `order_id`, `payment_id`, `payhere_amount`, `payhere_currency`, `status_code`, `md5sig`, `custom_1`, `custom_2`, `result`) 
+		VALUES ('212483','351510090504138','320025038877','50.00','LKR','2','2AE883AE2BD0DA16A6B564E344A96384','Nuwan Senevirathna','senevind@gmail.com','Succesfully Extended for one year! ')
