@@ -28,7 +28,7 @@ if(!$fgmembersite->CheckLogin())
 {
 	if(!$fgmembersite->Login())
 	   {
-		   echo "Authentication Error, Please re login!";
+		   echo "Authantication Error!";
 		   die;
 			//$fgmembersite->RedirectToURL("login.php");
 	  }
@@ -44,8 +44,6 @@ if(!$fgmembersite->CheckLogin())
 	<script type="text/javascript" src="Leaflet/antpath/leaflet-ant-path.js"></script>
 	<script type="text/javascript" src="Leaflet/XplayDrawRouteSections.js"></script>
 
-	<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAx0beF1k-G06wZez4T27V49kIsjKs5gac&language=ar&region=MA" async defer></script>
-	<script type="module" src="Leaflet/GoogleMutant-master/src/Leaflet.GoogleMutant.js"></script>
 <style>
 .mapholder{
 	overflow:hidden;
@@ -83,35 +81,19 @@ var NotificMarkerIndex = 0;
 
 function initialize(){
 	if(!map){
-			//Google Maps
-			var GoogleAerial = L.gridLayer.googleMutant({ type: 'satellite' }); 
-			var GoogleRoad = L.gridLayer.googleMutant({ type: 'roadmap' }); 
-			var GoogleTerrain = L.gridLayer.googleMutant({ type: 'terrain' }); 
-			var GoogleHybrid = L.gridLayer.googleMutant({ type: 'hybrid' }); 
-			
+		
 			map = L.map('mapholder').setView([52.40689760245717, -1.510605666657068], 8);
 
-/*
 				L.tileLayer(
-				//'https://map.gsupertrack.com/apimapbox.php?provider=mapbox&type=streets-v11&z={z}&x={x}&y={y}',
 				'https://mt0.google.com/vt/lyrs=m&hl=en&x={x}&y={y}&z={z}',
+				//'https://map.gsupertrack.com/apimapbox.php?provider=mapbox&type=streets-v11&z={z}&x={x}&y={y}',
 				{
+					maxZoom: 18,
 					id: 'mapbox/streets-v11'
 				}).addTo(map);
-*/
-			//var GoogleAerial = L.gridLayer.googleMutant({ type: 'roadmap' }).addTo(map); 
-			GoogleRoad.addTo(map);
-			
-			//layer control
-			var baseMaps = {
-			"Google Roadmap":GoogleRoad,
-			"Google Aerial":GoogleAerial,
-			"Google Terrain":GoogleTerrain,
-			"Google Hybrid":GoogleHybrid,
-			};
-			
-			L.control.layers(baseMaps,null,{position: 'topleft'}).addTo(map);
-			
+
+			VeMarkers.addTo(map);
+
 	}
 	CreateVehicleMarker();
 }

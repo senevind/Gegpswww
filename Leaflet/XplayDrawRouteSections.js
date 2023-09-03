@@ -45,7 +45,7 @@ var LatLng = [];
 				LatLng.push(line_json[i].lat,line_json[i].lng);
 				points.push(LatLng);
 				
-		if(line_json[i].Velocity==0)
+		if(line_json[i].VelocityRow==0)
 		{
 			CreateStopPath(i,line_json[i].lat,line_json[i].lng,line_json[i].time,line_json[i].park);
 		}
