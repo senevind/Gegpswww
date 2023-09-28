@@ -961,12 +961,16 @@ $sysnoarray = $this->SysInfoArray($Busno,$connection);
 				$travalTime = $date2->getTimestamp() - $date->getTimestamp();
 				$distance = $this->vincentyGreatCircleDistance($passLat, $passLong, $row['Latitude'], $row['Longitude']);
 				$speed = $distance/$travalTime;
+				$milageCumilat = $milageCumilat + $distance;
+
+				/*
 				if($speed<100)
 				{
 					$milageCumilat = $milageCumilat + $distance;
 				}else{
 					$milageCumilat = $milageCumilat + 0;
 				}
+				*/
 			}
 
 			if($row['Velocity']>2 && $starttimecount == false){
@@ -1212,7 +1216,6 @@ function NotificPlaybackReportCreate($sysnoarray,$sttime,$endtime,$connection)
 	}
 	return $notificinfo;
 }
-
 function PlaybackReportCreate($fgmembersite,$sysnoarray,$sttime,$endtime,$connection)
 {
 		$qry="SELECT DATE_ADD(`Time`, INTERVAL ".$fgmembersite->UserTimeZone()." MINUTE) as Time, `Longitude`, `Latitude`, `Velocity`, `Angle`, `Locate`, `DtStatus`, `Oil`, `Miles`, `Temperature`, `Alarm`, `send`, `result` 
@@ -1236,124 +1239,125 @@ function PlaybackReportCreate($fgmembersite,$sysnoarray,$sttime,$endtime,$connec
 
 	
 
-	
-$pass_point = '';
-$start_loop = 1;
-$record_count = 0;
-$total_record_count = 0;
-$point='';
-$velosity='';
-$tablebody = "";
-$row_count = 0;
-$lastplusmilage = 0;
-	while($row = mysqli_fetch_array($stmt))
-{
-	if($row_count == 0)
+		
+	$pass_point = '';
+	$start_loop = 1;
+	$record_count = 0;
+	$total_record_count = 0;
+	$point='';
+	$velosity='';
+	$tablebody = "";
+	$row_count = 0;
+	$lastplusmilage = 0;
+		while($row = mysqli_fetch_array($stmt))
 	{
-		$firstmilage = 0;
-	}
-	
-
-	
-	
-	if($row_count==0){
-		$milageCumilat = 0;
-		$milage = 0;
-	}else{
-		$date = new DateTime($passTime);
-		$date2 = new DateTime($row['Time']);
-		$travalTime = $date2->getTimestamp() - $date->getTimestamp();
-		$distance = $this->vincentyGreatCircleDistance($passLat, $passLng, $row['Latitude'], $row['Longitude']);
-		//echo $passLat." ".$passLng." ".$row['Latitude']." ".$row['Longitude']."<br>";
-		//echo $distance."<br>";
-		$speed = $distance/$travalTime;
-		if($speed<200)
+		if($row_count == 0)
 		{
-			$milageCumilat = $milageCumilat + $distance;
+			$firstmilage = 0;
+		}
+		
+		if($row_count==0){
+			$milageCumilat = 0;
+			$milage = 0;
 		}else{
-			$milageCumilat = $milageCumilat + 0;
+			$date = new DateTime($passTime);
+			$date2 = new DateTime($row['Time']);
+			$travalTime = $date2->getTimestamp() - $date->getTimestamp();
+			$distance = $this->vincentyGreatCircleDistance($passLat, $passLng, $row['Latitude'], $row['Longitude']);
+			//echo $passLat." ".$passLng." ".$row['Latitude']." ".$row['Longitude']."<br>";
+			//echo $distance."<br>";
+			$milageCumilat = $milageCumilat + $distance;
+
+			/*
+			$speed = $distance/$travalTime;
+			if($speed<200)
+			{
+				$milageCumilat = $milageCumilat + $distance;
+			}else{
+				$milageCumilat = $milageCumilat + 0;
+			}
+			*/
+			$milage = $milageCumilat;
 		}
-		$milage = $milageCumilat;
-	}
-	//$milage = round(($milage/1000)*0.621371);		//Convert to miles
-	
-	
-	
-	$row_count++;
-	
-	$total_record_count++;
-	$pass_point=$point;
-	$passLat = $row['Latitude'];
-	$passLng = $row['Longitude'];
-	$point = $row['Latitude'].",".$row['Longitude'];
-	$pass_velosity=$velosity;
-	$velosity=$row['Velocity'];
-	
-	if($start_loop==1){
+		//$milage = round(($milage/1000)*0.621371);		//Convert to miles
+		
+		
+		
+		$row_count++;
+		
+		$total_record_count++;
+		$pass_point=$point;
+		$passLat = $row['Latitude'];
+		$passLng = $row['Longitude'];
+		$point = $row['Latitude'].",".$row['Longitude'];
+		$pass_velosity=$velosity;
+		$velosity=$row['Velocity'];
+		
+		if($start_loop==1){
+			if ($row['Velocity']==0){
+				$pass_point=$point;
+				$passLat = $row['Latitude'];
+				$passLng = $row['Longitude'];
+				$start_count = 1;
+				$pass_stop_time = $row['Time'];
+			}
+			$start_loop=0;
+		}
+
+
+
 		if ($row['Velocity']==0){
-			$pass_point=$point;
-			$passLat = $row['Latitude'];
-			$passLng = $row['Longitude'];
 			$start_count = 1;
-			$pass_stop_time = $row['Time'];
 		}
-		$start_loop=0;
-	}
-
-
-
-	if ($row['Velocity']==0){
-		$start_count = 1;
-	}
-	else
-	{
-		if ($start_count==1){
+		else
+		{
+			if ($start_count==1){
+				$record_count++;
+				$Vehicleinfo[] = $this->PlaybackCreate_stopping_row($fgmembersite,$milage,$row['Time'],$pass_point,$pass_stop_time,$record_count,$pass_velosity,$sysnoarray['image'],$row['Oil'],$passLat,$passLng,$row['Angle'],$row['DtStatus']);
+				}
 			$record_count++;
-			$Vehicleinfo[] = $this->PlaybackCreate_stopping_row($fgmembersite,$milage,$row['Time'],$pass_point,$pass_stop_time,$record_count,$pass_velosity,$sysnoarray['image'],$row['Oil'],$passLat,$passLng,$row['Angle'],$row['DtStatus']);
-			}
-		$record_count++;
-		$Vehicleinfo[] = $this->PlaybackCreate_stopping_row($fgmembersite,$milage,$row['Time'],$point,$row['Time'],$record_count,$row['Velocity'],$sysnoarray['image'],$row['Oil'],$row['Latitude'],$row['Longitude'],$row['Angle'],$row['DtStatus']);
-		$pass_stop_time = $row['Time'];
-		$start_count = 0;
+			$Vehicleinfo[] = $this->PlaybackCreate_stopping_row($fgmembersite,$milage,$row['Time'],$point,$row['Time'],$record_count,$row['Velocity'],$sysnoarray['image'],$row['Oil'],$row['Latitude'],$row['Longitude'],$row['Angle'],$row['DtStatus']);
+			$pass_stop_time = $row['Time'];
+			$start_count = 0;
+		}
+
+	if ($total_record_count==$sql_rec_count){
+			if ($start_count==1){
+				$record_count++;
+				$Vehicleinfo[] = $this->PlaybackCreate_stopping_row($fgmembersite,$milage,$row['Time'],$point,$pass_stop_time,$record_count,$pass_velosity,$sysnoarray['image'],$row['Oil'],$row['Latitude'],$row['Longitude'],$row['Angle'],$row['DtStatus']);
+				}
+			$pass_stop_time = $row['Time'];
+			$start_count = 0;
 	}
+		
 
-if ($total_record_count==$sql_rec_count){
-		if ($start_count==1){
-			$record_count++;
-			$Vehicleinfo[] = $this->PlaybackCreate_stopping_row($fgmembersite,$milage,$row['Time'],$point,$pass_stop_time,$record_count,$pass_velosity,$sysnoarray['image'],$row['Oil'],$row['Latitude'],$row['Longitude'],$row['Angle'],$row['DtStatus']);
-			}
-		$pass_stop_time = $row['Time'];
-		$start_count = 0;
-}
-	
-
-}
-return $Vehicleinfo;
+	}
+	return $Vehicleinfo;
 }
 
 function PlaybackCreate_stopping_row($fgmembersite,$milage,$time,$point,$pass_stop_time,$record_count,$velosity,$image,$Oil,$Lat,$lng,$Angle,$DtStatus)
 {
-$PassTimeDisplay = $fgmembersite->UserTimeFormat($pass_stop_time);
-$TimeDisplay = $fgmembersite->UserTimeFormat($time);
-$TimeOnlyDisplay = date("H:i:s", strtotime($pass_stop_time));
-//$PassTimeDisplay = $pass_stop_time;
-//$TimeDisplay = $time;
-$milage = $fgmembersite->UserUnit(round($milage/1000))['value'].$fgmembersite->UserUnit(0)['lengthUnit'];
+	$PassTimeDisplay = $fgmembersite->UserTimeFormat($pass_stop_time);
+	$TimeDisplay = $fgmembersite->UserTimeFormat($time);
+	$TimeOnlyDisplay = date("H:i:s", strtotime($pass_stop_time));
+	//$PassTimeDisplay = $pass_stop_time;
+	//$TimeDisplay = $time;
+	$milage = $fgmembersite->UserUnit(round($milage/1000))['value'].$fgmembersite->UserUnit(0)['lengthUnit'];
 
+		$VelocityRow = $velosity;
+		if ($velosity==0){
+			//echo $pass_stop_time." ".$time."<br>";
+			$velosity = $fgmembersite->UserUnit(round($velosity))['value'].$fgmembersite->UserUnit(0)['speedUnit'];
+			return array('mapimage'=>$image,'Oil'=>$Oil,'Miles'=>$milage,'StartTime'=>$TimeOnlyDisplay,'time'=>$PassTimeDisplay,'lng'=>$lng,'lat'=>$Lat,'VelocityRow'=>$VelocityRow,'Velocity'=>$velosity,'Angle'=>$Angle,'DtStatus'=>$DtStatus,'park'=>$this->time_diff($pass_stop_time,$time),'status'=>'Stop');
 
-	if ($velosity==0){
-		$velosity = $fgmembersite->UserUnit(round($velosity))['value'].$fgmembersite->UserUnit(0)['speedUnit'];
-		return array('mapimage'=>$image,'Oil'=>$Oil,'Miles'=>$milage,'StartTime'=>$TimeOnlyDisplay,'time'=>$PassTimeDisplay,'lng'=>$lng,'lat'=>$Lat,'Velocity'=>$velosity,'Angle'=>$Angle,'DtStatus'=>$DtStatus,'park'=>$this->time_diff($pass_stop_time,$time),'status'=>'Stop');
-
-	//return "<tr><td>".$pass_stop_time."  -  ".$time."</td><td>".$velosity."</td><td>Stop</td><td>".$milage."</td><td><div id='".$record_count."address'>".$point."</div></td><td>".$this->time_diff($pass_stop_time,$time)."</td></tr>";
-	}
-	else {
-		$velosity = $fgmembersite->UserUnit(round($velosity))['value'].$fgmembersite->UserUnit(0)['speedUnit'];
-		return array('mapimage'=>$image,'Oil'=>$Oil,'Miles'=>$milage,'StartTime'=>$TimeOnlyDisplay,'time'=>$PassTimeDisplay,'lng'=>$lng,'lat'=>$Lat,'Velocity'=>$velosity,'Angle'=>$Angle,'DtStatus'=>$DtStatus,'park'=>$this->time_diff($pass_stop_time,$time),'status'=>'Run');
-	//return "<tr><td>".$pass_stop_time."</td><td>".$velosity."</td><td>Run</td><td>".$milage."</td><td><div id='".$record_count."address'>".$point."</div></td><td>".$this->time_diff($pass_stop_time,$time)."</td></tr>";
-	}
+		//return "<tr><td>".$pass_stop_time."  -  ".$time."</td><td>".$velosity."</td><td>Stop</td><td>".$milage."</td><td><div id='".$record_count."address'>".$point."</div></td><td>".$this->time_diff($pass_stop_time,$time)."</td></tr>";
+		}
+		else {
+			$velosity = $fgmembersite->UserUnit(round($velosity))['value'].$fgmembersite->UserUnit(0)['speedUnit'];
+			return array('mapimage'=>$image,'Oil'=>$Oil,'Miles'=>$milage,'StartTime'=>$TimeOnlyDisplay,'time'=>$PassTimeDisplay,'lng'=>$lng,'lat'=>$Lat,'VelocityRow'=>$VelocityRow,'Velocity'=>$velosity,'Angle'=>$Angle,'DtStatus'=>$DtStatus,'park'=>$this->time_diff($pass_stop_time,$time),'status'=>'Run');
+		//return "<tr><td>".$pass_stop_time."</td><td>".$velosity."</td><td>Run</td><td>".$milage."</td><td><div id='".$record_count."address'>".$point."</div></td><td>".$this->time_diff($pass_stop_time,$time)."</td></tr>";
+		}
 }
-
 
 ///////////////////////////////  Playback report End  ////////////////////////////
 
@@ -1837,12 +1841,16 @@ $row_count=0;
 		//echo $passLat." ".$passLng." ".$row['Latitude']." ".$row['Longitude']."<br>";
 		//echo $distance."<br>";
 		$speed = $distance/$travalTime;
+		$milageCumilat = $milageCumilat + $distance;
+
+		/*
 		if($speed<100)
 		{
 			$milageCumilat = $milageCumilat + $distance;
 		}else{
 			$milageCumilat = $milageCumilat + 0;
 		}
+		*/
 		$milage = $milageCumilat;
 	}
 	//$milage = round(($milage/1000)*0.621371);		//Convert to miles

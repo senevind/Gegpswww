@@ -75,10 +75,11 @@ var StopMarkerIndex = 0;
 var NotificMarkerIndex = 0;
 var seekposition=0;
 var playStatus = false;
+var Var_play_timer = null;
 function initialize(){
 	if(!map){
 		
-			map = L.map('mapholder').setView([52.40689760245717, -1.510605666657068], 8);
+			map = L.map('mapholder').setView([43.141216, -79.610058], 8);
 
 				L.tileLayer(
 				'https://mt0.google.com/vt/lyrs=m&hl=en&x={x}&y={y}&z={z}',
@@ -113,12 +114,17 @@ if( typeof responseresult.Vehicleinfo.length === 'undefined' || responseresult.V
 	{
 		Var_play_timer=setInterval("play_loop('f')", 300);
 		playStatus = true;
+	}else{
+		stop_play();
 	}
 }
 }
 function stop_play(){
-clearInterval(Var_play_timer);
-playStatus = false;
+	if(Var_play_timer !== null)
+	{
+		clearInterval(Var_play_timer);
+		playStatus = false;
+	}
 }
 
 function back(){
@@ -135,6 +141,7 @@ function play_loop(action){
 		if(seekposition<responseresult.Vehicleinfo.length){
 			UpdateVehicleLocation(responseresult.Vehicleinfo[seekposition].lat,responseresult.Vehicleinfo[seekposition].lng);
 			updatecontentinfo(seekposition);
+			updateSeekValue(seekposition);
 			if(action=='f'){
 			seekposition++;
 			}
@@ -187,11 +194,13 @@ function webViewRefresh()
 
 function LoadDatatoWebview(date,username,password,vehicle)
 {
-	
+	stop_play();
 	removeStopMarkers();
 	removeNotificMarkers();
 	StopMarkerIndex = 0;
 	NotificMarkerIndex = 0;
+	responseresult = null;
+	updateSeekValue(0);
 	//StopMarkers = new Array();
 	
 	
@@ -269,6 +278,12 @@ function myFunctionRem()
 		map.removeLayer(StopMarkers[i]);
 	}
 }
+
+function updateSeekValue(seekValue)
+{
+	document.getElementById("seekbar").value = seekValue;
+}
+
 function updatecontentinfo(position){
 	//alert("Time: "+responseresult.Vehicleinfo[position].time);
 	
@@ -283,16 +298,12 @@ function updatecontentinfo(position){
 }
 function disablebtnclass(){
 	document.getElementById("btnplay").className = "btn btn-primary disabled";
-	document.getElementById("btnstop").className = "btn btn-white disabled";
-	document.getElementById("btnback").className = "btn btn-white disabled";
-	document.getElementById("btnnext").className = "btn btn-white disabled";
+	document.getElementById("seekbar").max = 0;
 }
 
 function activatebtnclass(){
 	document.getElementById("btnplay").className = "btn btn-primary active";
-	document.getElementById("btnstop").className = "btn btn-white active";
-	document.getElementById("btnback").className = "btn btn-white active";
-	document.getElementById("btnnext").className = "btn btn-white active";
+	document.getElementById("seekbar").max = (responseresult.Vehicleinfo.length-1);
 }
 function changevehiclename(vehiclename)
 {
@@ -303,6 +314,19 @@ function changevehiclename(vehiclename)
 	}
 }
 
+</script>
+<script>
+
+
+function showVal(seekValue)
+{
+	seekposition = seekValue;
+	updateSeekValue(seekValue);
+	
+	UpdateVehicleLocation(responseresult.Vehicleinfo[seekposition].lat,responseresult.Vehicleinfo[seekposition].lng);
+	updatecontentinfo(seekposition);
+	console.log(seekValue);
+}
 </script>
 </head>
 <body onload="initialize()" class="fixed-navbar sidebar-scroll">
@@ -463,9 +487,7 @@ function changevehiclename(vehiclename)
 												<h4>Play Back & Monitoring</h4>
 											</div>
 											<div class="ibox-content">
-
 															<small></small>
-															
 															<div class="form-group" id="data_1">
 																<label class="font-normal">Enter the date and Search</label>
 																<div class="input-group date">
@@ -476,18 +498,16 @@ function changevehiclename(vehiclename)
 																<p>
 																	 Select your Vehicle
 																</p>
-																<select class="select2_demo_2 form-control" id="trackbus" name="selValue" style="width: 150px;">
+																<select class="select2_demo_2 form-control" id="trackbus" name="selValue">
 																	<?= $fgmembersite->VehicleListOptions(); ?>
 																</select>
 															</div>
-															<div class="btn-group">
+															<div class="form-group">
 																<button class="btn btn-primary" id="btnsearch" type="button" onclick="searchbus()">Search</button>
-																<button class="btn btn-white" id="btnplay" type="button"onclick="play()">Play</button>
-																<button class="btn btn-white" id="btnstop" type="button" onclick="stop_play()">Stop</button>
-																<button class="btn btn-white" id="btnback" type="button" onclick="back()">Back</button>
-																<button class="btn btn-white" id="btnnext" type="button" onclick="next()">Next</button>
+																<button class="btn btn-primary disabled" id="btnplay" type="button"onclick="play()">Play/Stop</button>
 															</div>
 															<div class="form-group">
+																<input type="range" class="form-range" min="0" max="5" step="1" id="seekbar" oninput="showVal(this.value)"  onchange="showVal(this.value)">
 															</div>
 															<br>
 											</div>
