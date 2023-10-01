@@ -332,7 +332,22 @@ if(isset($_POST['Command']) && $_POST['Command'] == "Engine Off")
 	exit;
 }
 
-
+if(isset($_POST['reason']) && $_POST['reason'] == "DaywiceReportByIMEI")
+{
+	if(!$fgmembersite->DBLogin())
+	{
+		echo "Not connected";
+		return false;
+	}
+	//print_r($_POST);
+	//exit;
+	$reportArray = array();
+	header('Content-Type: application/json; charset=utf-8');
+	$reportSubArray = $Reports->DaywiceReportByIMEI($fgmembersite,$_POST['date'],$fgmembersite->connection,$_POST['object']);
+	$reportArray[] = $reportSubArray;
+	echo json_encode(array('Vehicleinfo'=>$reportArray));
+	exit;
+}
 
 
 

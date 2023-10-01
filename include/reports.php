@@ -1216,6 +1216,7 @@ function NotificPlaybackReportCreate($sysnoarray,$sttime,$endtime,$connection)
 	}
 	return $notificinfo;
 }
+
 function PlaybackReportCreate($fgmembersite,$sysnoarray,$sttime,$endtime,$connection)
 {
 		$qry="SELECT DATE_ADD(`Time`, INTERVAL ".$fgmembersite->UserTimeZone()." MINUTE) as Time, `Longitude`, `Latitude`, `Velocity`, `Angle`, `Locate`, `DtStatus`, `Oil`, `Miles`, `Temperature`, `Alarm`, `send`, `result` 
@@ -1335,6 +1336,8 @@ function PlaybackReportCreate($fgmembersite,$sysnoarray,$sttime,$endtime,$connec
 	return $Vehicleinfo;
 }
 
+
+
 function PlaybackCreate_stopping_row($fgmembersite,$milage,$time,$point,$pass_stop_time,$record_count,$velosity,$image,$Oil,$Lat,$lng,$Angle,$DtStatus)
 {
 	$PassTimeDisplay = $fgmembersite->UserTimeFormat($pass_stop_time);
@@ -1360,8 +1363,186 @@ function PlaybackCreate_stopping_row($fgmembersite,$milage,$time,$point,$pass_st
 }
 
 ///////////////////////////////  Playback report End  ////////////////////////////
+function SysInfoArraybySysno($sysno,$connection){
 
+	$qry = "SELECT objname,objsysno,tz,mapimage,battery
+  FROM trackingobjects
+  WHERE objsysno = '$sysno'";
 
+  $stmt = mysqli_query($connection,$qry);
+  
+  	while($row = mysqli_fetch_array($stmt))
+	{
+		return array('sysno'=>$row['objsysno'],'tz'=>$row['tz'],'BusNo'=>$row['objname'],'image'=>$row['mapimage'],'battery'=>$row['battery']);
+	}
+return false;
+}
+
+function DaywiceReportByImei($fgmembersite,$sttime,$connection,$sysno){
+		$sysnoarray = $this->SysInfoArraybySysno($sysno,$connection);
+		//print_r($sysnoarray);
+		//exit;
+	
+		$qry="SELECT   DATE_ADD(`Time`, INTERVAL ".$fgmembersite->UserTimeZone()." MINUTE) as Time, `Longitude`, `Latitude`, `Velocity`, `Angle`, `Locate`, `DtStatus`, `Oil`, `Miles`, `Temperature`, `Alarm`, `send`, `result`
+		FROM `tko".$sysnoarray['sysno']."`
+		WHERE DATE_ADD(`Time`, INTERVAL ".$fgmembersite->UserTimeZone()." MINUTE) > '".$sttime." 00:00:00.000'
+		AND DATE_ADD(`Time`, INTERVAL ".$fgmembersite->UserTimeZone()." MINUTE) < '".$sttime." 23:59:59.000'
+		AND `Longitude` != '0'
+		AND `Latitude` != '0'
+		ORDER BY DATE_ADD(`Time`, INTERVAL ".$fgmembersite->UserTimeZone()." MINUTE)";
+		
+		//echo $qry;
+		//exit;
+
+		$stmt = mysqli_query($connection,$qry);
+	
+		$milageCumilat = 0;
+		$passLat = 0;
+		$passLong = 0;
+		$milege1=0;
+		$milege2=0;
+		$rowcount = 0;
+		$totalvelosity=0;
+		$topspeed=0;
+		$starttimecount = false;
+		$stoptimecount = false;
+		$runningcount = 0;
+		$idlecount = 0;
+		$stoppedcount = 0;
+		$timestemparray = array();
+		$rownumber = 0;
+		$sratrtime = '-';
+		$stoptime = '-';
+		$getstoptime = '-';
+		$stoptimeset = false;
+		
+		$e = new DateTime('00:00');
+		$f = clone $e;
+	
+	
+			while($row = mysqli_fetch_array($stmt))
+			{
+				
+				////////////////////////////  Date Topspeed  averagespeed todaymilage  Traveltime  //////////////////////////
+				if($rowcount==0){
+					$milege2 = $row['Miles'];
+				}else{
+					if($row['Velocity']>2 )
+					{
+						$date = new DateTime($passTime);
+						$date2 = new DateTime($row['Time']);
+						$travalTime = $date2->getTimestamp() - $date->getTimestamp();
+						$distance = $this->vincentyGreatCircleDistance($passLat, $passLong, $row['Latitude'], $row['Longitude']);
+						$speed = $distance/$travalTime;
+	
+						/*
+						if($speed<200)
+						{
+							$milageCumilat = $milageCumilat + $distance;
+						}else{
+							$milageCumilat = $milageCumilat + 0;
+						}
+						*/
+						$milageCumilat = $milageCumilat + $distance;
+					}
+				}
+	
+				if($row['Velocity']>2 && $starttimecount == false){
+					$starttimecount = true;
+					$sratrtime = $row['Time'];
+				}
+	
+				if($row['Velocity']>2 && $starttimecount == true){
+					if(!$stoptimeset)
+					{
+						$getstoptime = $row['Time'];
+						$stoptimeset = true;
+					}
+				}
+	
+				
+				if($row['Velocity']<=2 && $starttimecount == true){
+					$stoptimecount = true;
+					$stoptime = $row['Time'];
+					$e->add($this->time_diffobj($sratrtime,$stoptime));
+					$starttimecount = false;
+					$stoptimecount = false;
+				}
+	
+				if($topspeed<$row['Velocity']){
+					$topspeed=$row['Velocity'];
+				}
+	
+				if($row['Velocity']>2){
+					$totalvelosity=$row['Velocity']+$totalvelosity;
+					$rowcount++;
+				}
+			$milege1 = $row['Miles'];
+			
+			////////////////////////////////  Runningtime Idletime Stoppedtime  //////////////////////////////
+				if($row['Velocity']>2 ){
+					$runningcount++;
+				}
+				if($row['Velocity'] <= 2 && $row['DtStatus'] > 0){
+					$idlecount++;
+				}
+				if($row['Velocity'] <= 2 && $row['DtStatus'] == 0){
+					$stoppedcount++;
+				}
+				
+			//////////////////////////////  Tracking Intervel  ////////////////////////////////////////
+			
+				if($rownumber<10){
+					$timestemparray[$rownumber] = $row['Time'];
+				}
+			$rownumber++;
+			
+			$passLat = $row['Latitude'];
+			$passLong = $row['Longitude'];
+			$passTime = $row['Time'];
+			
+			}
+	
+			$trackinginterval = round($this->gettimeinterval($timestemparray));
+			if($trackinginterval<0)
+			{
+				$trackinginterval = $trackinginterval*-1;
+			}
+			if($rowcount==0){
+				$avgvelosity=0;
+			}
+			else{
+				$avgvelosity = $totalvelosity/$rowcount;
+			}
+		$avgvelosity = number_format($avgvelosity, 2, '.', '');
+	
+		//$milage_diff = ($milege2-$milege1)/1000;
+		$milage_diff = round(($milageCumilat/1000),2);
+		$milage_diff = $fgmembersite->UserUnit($milage_diff)['value'];
+		$lengtUnit = $fgmembersite->UserUnit($milage_diff)['lengthUnit'];
+		$speedUnit = $fgmembersite->UserUnit($milage_diff)['speedUnit'];
+		//return "<tr><td>".$sttime."</td><td>".$topspeed."</td><td>".$avgvelosity."</td><td>".$milage_diff."</td><td>".$f->diff($e)->format("%H:%I")."</td></tr>";
+		
+		if($rownumber==0)
+		{
+			return array('battery'=>$sysnoarray['battery'],'milage'=>'0','speedUnit'=>$speedUnit,'lengtUnit'=>$lengtUnit);
+		}else{		
+		$offlinemin = round(1440-($rownumber*$trackinginterval/60));
+			if($offlinemin < 0)
+			{
+				$offlinemin = 0;
+			}
+			$onlinemin = round($rownumber*$trackinginterval/60);
+			if($onlinemin > 1440)
+			{
+				$onlinemin = 1439;
+			}
+		return array('speedUnit'=>$speedUnit,'lengtUnit'=>$lengtUnit,'stoptime'=>$fgmembersite->UserTimeFormat($sratrtime),'starttime'=>$fgmembersite->UserTimeFormat($getstoptime),'busno'=>$Busno,'sysno'=>$sysnoarray['sysno'],'trackinterval'=>$trackinginterval,'date'=>$fgmembersite->UserDateFormat($sttime),'topspeed'=>$fgmembersite->UserUnit($topspeed)['value'],'avgspeed'=>$fgmembersite->UserUnit($avgvelosity)['value'],'milage'=>$milage_diff,'traveltime'=>$f->diff($e)->format("%H:%I"),'runcount'=>$runningcount,'idlecount'=>$idlecount,'stopcount'=>$stoppedcount,'totalrowcount'=>$rownumber,'onlinetime'=>date('H:i',mktime(0,($onlinemin))),'offlinetime'=>date('H:i',mktime(0,($offlinemin))),'onlinemin'=>round($rownumber*$trackinginterval/60),'offlinemin'=>$offlinemin,'runmin'=>round($runningcount*$trackinginterval/60),'idlemin'=>round($idlecount*$trackinginterval/60),'stopedmin'=>round($stoppedcount*$trackinginterval/60),'runningtime'=>date('H:i',mktime(0,0,($runningcount*$trackinginterval))),'idletime'=>date('H:i',mktime(0,0,($idlecount*$trackinginterval))),'stoppedtime'=>date('H:i',mktime(0,0,($stoppedcount*$trackinginterval))),'battery'=>$sysnoarray['battery']);
+		}
+	
+}
+
+	
 //////////////////////////////	App Report Operation	//////////////////////////
 function AppReportOperation($VehicleNo,$StDate,$EndDate,$fgmembersite)
 {
